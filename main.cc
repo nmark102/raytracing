@@ -69,9 +69,9 @@ int main() {
     cam.render(world);
     */
 
+    point3 c1 = point3(0, 0, 0), c2 = point3(1, 0, 0), c3 = point3(0, 1, 0);
     auto ground_material = make_shared<lambertian>(color(0.2, 0.9, 0.3));
-    triangle t = triangle(point3(0, 0, 0), point3(1, 0, 0), point3(0, 1, 0),
-                                        ground_material);
+    triangle t = triangle(c1, c2, c3, ground_material);
 
     t.dump();
 }

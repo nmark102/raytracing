@@ -10,7 +10,7 @@ class triangle : public hittable {
             : p1(_p1), p2(_p2), p3(_p3), mat(_material) {
             
             // set the normal vector
-            normal = cross(vec3(_p1 - _p2), vec3(_p2 - _p3));
+            this->normal = cross(vec3(_p1 - _p2), vec3(_p2 - _p3));
             
             // set the "d" factor so that we can present the polygon as a plane
             d = dot(normal, vec3(_p1));
@@ -20,7 +20,7 @@ class triangle : public hittable {
             double b    = vec3(_p2 - _p3).length();
             double c    = vec3(_p3 - _p1).length();
             double s    = (a + b + c) / 2;
-            area        = sqrt(s * (s-a) * (s-b) * (s-c));
+            this->area  = sqrt(s * (s-a) * (s-b) * (s-c));
         }
 
         bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
@@ -29,21 +29,24 @@ class triangle : public hittable {
             }
 
             // find the intersection between the ray and the plane
-            point3& intersection;
+            
+            double t = 0;
 
-            return triangle(p1, p2, intersection).area() 
-                    + triangle(p2, p3, intersection).area()
-                    + triangle(p3, p1, intersection).area()
-                    == area;
+            point3 intersection = r.at(t);
+
+            return triangle(p1, p2, intersection, nullptr).getarea() 
+                    + triangle(p2, p3, intersection, nullptr).getarea()
+                    + triangle(p3, p1, intersection, nullptr).getarea()
+                    == this->area;
         }
 
         double getarea() const {
-            return area;
+            return this->area;
         }
 
         void dump() const {
-            std::cout << "Normal:  " << normal << std::endl;
-            std::cout << "Area:    " << area << std::endl;
+            std::cout << "Normal:  " << this->normal << std::endl;
+            std::cout << "Area:    " << this->area << std::endl;
         }
 
     private:
