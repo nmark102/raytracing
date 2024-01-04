@@ -55,7 +55,7 @@ int main() {
 
     cam.aspect_ratio      = 16.0 / 9.0;
     cam.image_width       = 1200;
-    cam.samples_per_pixel = 100;
+    cam.samples_per_pixel = 20;
     cam.max_depth         = 50;
 
     cam.vfov     = 20;
@@ -73,5 +73,19 @@ int main() {
     auto ground_material = make_shared<lambertian>(color(0.2, 0.9, 0.3));
     triangle t = triangle(c1, c2, c3, ground_material);
 
-    t.dump();
+    hit_record rec;
+    point3 hitter_origin = point3(0.2, 0.2, -1), misser_origin = point3(-1, 3, 0);
+    vec3 test_ray_direction = vec3(0, 0, 1);
+    ray hitter = ray(hitter_origin, test_ray_direction), 
+        misser = ray(misser_origin, test_ray_direction);
+
+    interval small = interval(-1e-3, 1e-3);
+
+    std::cout << "Ray: " << hitter.origin() << " + t(" << hitter.direction() << ')' << std::endl; 
+    std::cout << t.hit(hitter, small, rec) << std::endl;
+
+    std::cout << "Ray: " << misser.origin() << " + t(" << misser.direction() << ')' << std::endl; 
+    std::cout << t.hit(misser, small, rec) << std::endl;
+
+    // t.dump();
 }

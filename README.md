@@ -1,0 +1,1 @@
+Ideas and much of the code were taken from [_Ray Tracing in One Weekend_](https://raytracing.github.io/books/RayTracingInOneWeekend.html); support for rendering triangles were built by me.

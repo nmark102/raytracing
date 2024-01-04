@@ -23,21 +23,33 @@ class triangle : public hittable {
             this->area  = sqrt(s * (s-a) * (s-b) * (s-c));
         }
 
+        // using the interval as the tolerance
         bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
+            // disregard if the ray is parallel to/on the plane
             if (dot(r.direction(), normal) == 0) {
                 return false;
             }
 
-            // find the intersection between the ray and the plane
-            
-            double t = 0;
+            // find the intersection point between the ray and the plane
+            // first solve for t
+            double t = (this->d - dot(this->normal, r.origin())) 
+                            / dot(this->normal, r.direction());
+            std::cout << "In hit(): t = " << t << std::endl;
 
+            // using t, compute the intersection point
             point3 intersection = r.at(t);
 
-            return triangle(p1, p2, intersection, nullptr).getarea() 
+            // using this intersection point and the corners of the polygon,
+            // we can create 3 inner triangles
+            // if the area of these 3 new triangles add up to the area of the
+            // original triangle (within tolerance), hit
+            double diff = triangle(p1, p2, intersection, nullptr).getarea() 
                     + triangle(p2, p3, intersection, nullptr).getarea()
                     + triangle(p3, p1, intersection, nullptr).getarea()
-                    == this->area;
+                    - this->area;
+
+            std::cout << "Section size difference = " << diff << std::endl;
+            return ray_t.surrounds(diff);
         }
 
         double getarea() const {
