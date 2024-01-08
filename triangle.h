@@ -23,7 +23,7 @@ class triangle : public hittable {
             this->area  = sqrt(s * (s-a) * (s-b) * (s-c));
         }
 
-        // using the interval as the tolerance
+        // interval prevents hits behind the camera to be registered
         bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
             // disregard if the ray is parallel to/on the plane
             if (dot(r.direction(), normal) == 0) {
@@ -34,7 +34,7 @@ class triangle : public hittable {
             // first solve for t
             double t = (this->d - dot(this->normal, r.origin())) 
                             / dot(this->normal, r.direction());
-            std::cout << "In hit(): t = " << t << std::endl;
+            // std::cout << "In hit(): t = " << t << std::endl;
 
             // using t, compute the intersection point
             point3 intersection = r.at(t);
@@ -43,13 +43,25 @@ class triangle : public hittable {
             // we can create 3 inner triangles
             // if the area of these 3 new triangles add up to the area of the
             // original triangle (within tolerance), hit
+
             double diff = triangle(p1, p2, intersection, nullptr).getarea() 
                     + triangle(p2, p3, intersection, nullptr).getarea()
                     + triangle(p3, p1, intersection, nullptr).getarea()
                     - this->area;
 
-            std::cout << "Section size difference = " << diff << std::endl;
-            return ray_t.surrounds(diff);
+            // std::cout << "Section size difference = " << diff << std::endl;
+
+            if (ray_t.surrounds(t) 
+                && -hit_tolerance <= diff && diff <= hit_tolerance) {
+
+                rec.p       = intersection;
+                rec.t       = t;
+                rec.mat     = this->mat;
+                rec.set_face_normal(r, unit_vector(this->normal));
+                // std::cout << "hit\n";
+                return true;
+            }
+            return false;
         }
 
         double getarea() const {
@@ -62,6 +74,8 @@ class triangle : public hittable {
         }
 
     private:
+        constexpr static double hit_tolerance = 1e-3;
+
         point3  &p1, &p2, &p3;
         vec3    normal;             // note: this vector is NOT normalized
         double  d;

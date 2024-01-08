@@ -23,6 +23,18 @@ class camera {
     double focus_dist = 10;    // Distance from camera lookfrom point to plane of perfect focus
 
 
+    /**
+     * Multi-threaded rendering notes:
+     * 
+     * 1) Pre-initialize frame buffer
+     * 2) Set thread arguments:
+     *  - reference to world
+     *  - thread index
+     *  - # of threads
+     *  - samples per pixel
+     * 3) Have each thread work on an independent pixel
+     * 4) Export when all threads terminate
+    */
     void render(const hittable& world) {
         initialize();
 
@@ -113,7 +125,7 @@ class camera {
 
         vec3 unit_direction = unit_vector(r.direction());
         auto a = 0.5*(unit_direction.y() + 1.0);
-        return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
+        return (1.0-a)*color(0.5, 0.7, 1.0) + a*color(1.0, 1.0, 1.0);
     }
 
     ray get_ray(int i, int j) const {

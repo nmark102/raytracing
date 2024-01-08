@@ -1,2 +1,5 @@
 all:
-	g++ main.cc
+	g++ -O2 -march=native -lpthread main.cc
+
+debug:
+	g++ -g -lpthread main.cc
