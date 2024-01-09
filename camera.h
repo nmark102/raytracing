@@ -1,6 +1,9 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
+#include <memory>
+#include <vector>
+
 #include "rtweekend.h"
 
 #include "color.h"
@@ -9,9 +12,9 @@
 
 class camera {
   public:
-    double aspect_ratio = 1.0;  // Ratio of image width over height
-    int    image_width  = 100;  // Rendered image width in pixel count
-    int    samples_per_pixel = 5;   // Count of random samples for each pixel
+    double aspect_ratio      = 1.0;  // Ratio of image width over height
+    int    image_width       = 100;  // Rendered image width in pixel count
+    int    samples_per_pixel = 20;   // Count of random samples for each pixel
     int    max_depth         = 10;   // Maximum number of ray bounces into scene
 
     double vfov = 90;  // Vertical view angle (field of view)
@@ -43,16 +46,18 @@ class camera {
         for (int j = 0; j < image_height; ++j) {
             std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
             for (int i = 0; i < image_width; ++i) {
-                color pixel_color(0,0,0);
+                // color pixel_color(0, 0, 0);
                 for (int sample = 0; sample < samples_per_pixel; ++sample) {
                     ray r = get_ray(i, j);
-                    pixel_color += ray_color(r, max_depth, world);
+                    frame_buffer[j][i] += ray_color(r, max_depth, world);
                 }
-                write_color(std::cout, pixel_color, samples_per_pixel);
+                // write_color(std::cout, pixel_color, samples_per_pixel);
+
             }
         }
 
         std::clog << "\rDone.                 \n";
+        export_image();
     }
 
   private:
@@ -65,9 +70,20 @@ class camera {
     vec3   defocus_disk_u;  // Defocus disk horizontal radius
     vec3   defocus_disk_v;  // Defocus disk vertical radius
 
-    void initialize() {
+    color ** frame_buffer;
+
+    inline void initialize() {
         image_height = static_cast<int>(image_width / aspect_ratio);
         image_height = (image_height < 1) ? 1 : image_height;
+
+        frame_buffer = new color * [this->image_height];
+        
+        for (int j = 0; j < this->image_height; ++j) {
+            frame_buffer[j] = new color[image_width];
+            for (int i = 0; i < this->image_width; ++i) {
+                frame_buffer[j][i] = color(0, 0, 0);
+            }
+        }
 
         center = lookfrom;
 
@@ -100,6 +116,33 @@ class camera {
         auto defocus_radius = focus_dist * tan(degrees_to_radians(defocus_angle / 2));
         defocus_disk_u = u * defocus_radius;
         defocus_disk_v = v * defocus_radius;
+    }
+
+    inline void export_image() {
+        for (int j = 0; j < this->image_height; ++j) {
+            for (int i = 0; i < this->image_width; ++i) {
+                auto r = frame_buffer[j][i].x();
+                auto g = frame_buffer[j][i].y();
+                auto b = frame_buffer[j][i].z();
+
+                // Divide the color by the number of samples.
+                auto scale = 1.0 / this->samples_per_pixel;
+                r *= scale;
+                g *= scale;
+                b *= scale;
+
+                // Apply the linear to gamma transform.
+                r = linear_to_gamma(r);
+                g = linear_to_gamma(g);
+                b = linear_to_gamma(b);
+
+                // Write the translated [0,255] value of each color component.
+                static const interval intensity(0.000, 0.999);
+                std::cout << static_cast<int>(256 * intensity.clamp(r)) << ' '
+                    << static_cast<int>(256 * intensity.clamp(g)) << ' '
+                    << static_cast<int>(256 * intensity.clamp(b)) << '\n';
+            }
+        }
     }
 
     point3 defocus_disk_sample() const {

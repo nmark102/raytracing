@@ -97,8 +97,13 @@ int main() {
     camera cam;
 
     cam.aspect_ratio      = 16.0 / 10.0;
+    #ifdef HIGH_QUALITY_EXPORT
     cam.image_width       = 1920;
-    cam.samples_per_pixel = 500;
+    cam.samples_per_pixel = 50;
+    #else
+    cam.image_width       = 960;
+    cam.samples_per_pixel = 20;
+    #endif
     cam.max_depth         = 50;
 
     cam.vfov     = 25;
