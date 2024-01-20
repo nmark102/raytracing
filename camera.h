@@ -8,7 +8,13 @@
 
 #include "color.h"
 #include "hittable.h"
+#include "hittable_list.h"
 #include "material.h"
+
+typedef struct thread_args {
+    hittable_list world;
+    int thread_id;
+} thread_args;
 
 class camera {
   public:
@@ -25,6 +31,7 @@ class camera {
     double defocus_angle = 0;  // Variation angle of rays through each pixel
     double focus_dist = 10;    // Distance from camera lookfrom point to plane of perfect focus
 
+    int num_worker_threads   = 1;
 
     /**
      * Multi-threaded rendering notes:
@@ -38,10 +45,18 @@ class camera {
      * 3) Have each thread work on an independent pixel
      * 4) Export when all threads terminate
     */
-    void render(const hittable& world) {
+    void render(const hittable_list& world) {
         initialize();
 
-        std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+        thread_args * args = new thread_args[this->num_worker_threads];
+        pthread_t * threads = new pthread_t[this->num_worker_threads];
+
+        for (int tid = 0; tid < 16; ++tid) {
+            args[tid].world = world;
+            args[tid].thread_id = tid;
+
+            pthread_create(&threads[tid], NULL, &thread_render, (void *) &args[tid]);
+        }
 
         for (int j = 0; j < image_height; ++j) {
             std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
@@ -71,6 +86,8 @@ class camera {
     vec3   defocus_disk_v;  // Defocus disk vertical radius
 
     color ** frame_buffer;
+
+    const int MIN_THREADS = 1, MAX_THREADS = 128;
 
     inline void initialize() {
         image_height = static_cast<int>(image_width / aspect_ratio);
@@ -116,9 +133,29 @@ class camera {
         auto defocus_radius = focus_dist * tan(degrees_to_radians(defocus_angle / 2));
         defocus_disk_u = u * defocus_radius;
         defocus_disk_v = v * defocus_radius;
+
+        // error checking number of worker threads
+        if (this->num_worker_threads < MIN_THREADS) {
+            this->num_worker_threads = MIN_THREADS;
+        }
+        if (this->num_worker_threads > MAX_THREADS) {
+            this->num_worker_threads = MAX_THREADS;
+        }
     }
 
+    static void * thread_render(void * args) {
+        thread_args * targs = (thread_args *) args;
+
+        const hittable_list world = targs->world;
+
+        return nullptr;
+    }
+    
+
     inline void export_image() {
+
+        std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+
         for (int j = 0; j < this->image_height; ++j) {
             for (int i = 0; i < this->image_width; ++i) {
                 auto r = frame_buffer[j][i].x();
